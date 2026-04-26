@@ -72,9 +72,9 @@ def test_add_kernel(size, atol=1e-3, rtol=1e-3, device = DEVICE):
         x_vals=[2**i for i in range(12,28,1)],
         x_log = True, #logarithmic scale
         line_arg = 'provider',
-        line_vals = ['triton','torch'],
-        line_names = ['Triton', 'torch'],
-        # style = [('blue','-'), ('green','-')],
+        line_vals = ['Triton','Torch'],
+        line_names = ['Triton', 'Torch'],
+        styles = [('blue','-'), ('green','-')],
         ylabel = 'GB/s',
         plot_name = 'vector-add-performance',
         args={},
@@ -85,12 +85,13 @@ def benchmark(size,provider):
     x = torch.randn(size, device=DEVICE, dtype=torch.float32)
     y = torch.randn(size, device=DEVICE, dtype=torch.float32)
 
-    quantiles = [0.5,0.05,0.95]
-    if provider == 'torch':
+    quantiles = [0.5,0.05,0.95] #median, 5% slowest, and 5% fastest
+    if provider == 'Torch':
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: x+y, quantiles = quantiles)
-    if provider == 'triton':
+    if provider == 'Triton':
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: add(x,y), quantiles = quantiles)
 
+    # millisec of the ops = rounds of memory ops * total num of elements * size of each elements * bytes -> gigabytes * (ms to sec)
     gbps = lambda ms: 3 * x.numel() * x.element_size() * 1e-9 / (ms * 1e-3) # cuz we did 3 memory ops, 1e-9 converts raw bytes to gigabytes
 
     return gbps(ms), gbps(max_ms), gbps(min_ms)
